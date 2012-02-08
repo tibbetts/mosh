@@ -1,0 +1,14 @@
+Build gcc 4.6 for OSX, I used 4.6.2, mostly followed the instructions at http://beardedcodewarrior.net/2011/07/25/building-gcc-4-6-1-on-mac-os-x-lion/ and it just worked.
+
+brew install pkg-config
+
+as mentioned in the pkg-config post-install output, you need to do: echo /usr/local/share/aclocal/ >> /usr/share/aclocal/dirlist
+
+brew install protobuf
+
+
+potentially useful bit of code on MTU discovery on OSX: http://code.google.com/p/tunnelblick/source/browse/trunk/third_party/openvpn/mtu.c?r=1464
+
+Outstanding issues:
+1) Path MTU discovery not work at all
+2) No signalfd on OSX, and need a layer of indirection in order to use self piping.
