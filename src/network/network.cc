@@ -21,7 +21,16 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <assert.h>
-#include <endian.h>
+
+#if defined(__APPLE__)
+# include <libkern/OSByteOrder.h>
+# define htobe64 OSSwapHostToBigInt64
+# define be64toh OSSwapBigToHostInt64
+# define htobe16 OSSwapHostToBigInt16
+# define be16toh OSSwapBigToHostInt16
+#else
+# include <endian.h>
+#endif
 
 #include "dos_assert.h"
 #include "network.h"
