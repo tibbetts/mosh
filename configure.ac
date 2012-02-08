@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.61])
 AC_INIT([mosh], [0.91a], [mosh-devel@mit.edu])
-AM_INIT_AUTOMAKE([-Wall -Werror])
+AM_INIT_AUTOMAKE([-Wall])
 AC_CONFIG_SRCDIR([src/frontend/mosh-client.cc])
 AC_CONFIG_HEADERS([config.h])
 
