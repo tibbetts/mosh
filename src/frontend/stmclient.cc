@@ -21,15 +21,17 @@
 #include <langinfo.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <pty.h>
 #include <stdlib.h>
 #include <poll.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <pwd.h>
 #include <signal.h>
-#include <sys/signalfd.h>
 #include <time.h>
+#if !defined(__APPLE__)
+#include <pty.h>
+#include <sys/signalfd.h>
+#endif
 
 #include "stmclient.h"
 #include "swrite.h"
@@ -101,11 +103,14 @@ void STMClient::main_init( void )
   /* stop "ignoring" WINCH signal */
   assert( sigprocmask( SIG_BLOCK, &signal_mask, NULL ) == 0 );
 
+#if !defined(__APPLE__)
+  // TODO: Must fix this.
   winch_fd = signalfd( -1, &signal_mask, 0 );
   if ( winch_fd < 0 ) {
     perror( "signalfd" );
     return;
   }
+#endif
 
   /* establish fd for shutdown signals */
   assert( sigemptyset( &signal_mask ) == 0 );
@@ -120,11 +125,14 @@ void STMClient::main_init( void )
   /* don't let signals kill us */
   assert( sigprocmask( SIG_BLOCK, &signal_mask, NULL ) == 0 );
 
+#if !defined(__APPLE__)
+  // TODO: Must fix this.
   shutdown_signal_fd = signalfd( -1, &signal_mask, 0 );
   if ( shutdown_signal_fd < 0 ) {
     perror( "signalfd" );
     return;
   }
+#endif
 
   /* get initial window size */
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -249,9 +257,12 @@ bool STMClient::process_user_input( int fd )
 
 bool STMClient::process_resize( void )
 {
+#if !defined(__APPLE__)
+  // TODO: Must fix this.
   struct signalfd_siginfo info;
   assert( read( winch_fd, &info, sizeof( info ) ) == sizeof( info ) );
   assert( info.ssi_signo == SIGWINCH );
+#endif
   
   /* get new size */
   if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {
@@ -328,6 +339,8 @@ void STMClient::main( void )
 
       if ( pollfds[ 3 ].revents & POLLIN ) {
 	/* shutdown signal */
+#if !defined(__APPLE__)
+  // TODO: Must fix this.
 	struct signalfd_siginfo the_siginfo;
 	ssize_t bytes_read = read( pollfds[ 3 ].fd, &the_siginfo, sizeof( the_siginfo ) );
 	if ( bytes_read == 0 ) {
@@ -336,7 +349,7 @@ void STMClient::main( void )
 	  perror( "read" );
 	  break;
 	}
-
+#endif
 	if ( !network->attached() ) {
 	  break;
 	} else if ( !network->shutdown_in_progress() ) {
