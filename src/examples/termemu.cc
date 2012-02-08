@@ -16,7 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <pty.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,11 +32,20 @@
 #include <typeinfo>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <sys/signalfd.h>
 #include <termios.h>
 #include <sys/types.h>
 #include <pwd.h>
 #include <sys/time.h>
+
+#if defined(__APPLE__)
+# include <sys/ioctl.h>
+# include <util.h>
+# include <crt_externs.h>
+# define environ *_NSGetEnviron()
+#else
+# include <pty.h>
+# include <sys/signalfd.h>
+#endif
 
 #include "parser.h"
 #include "completeterminal.h"
@@ -192,11 +200,14 @@ void emulate_terminal( int fd )
   /* stop "ignoring" WINCH signal */
   assert( sigprocmask( SIG_BLOCK, &signal_mask, NULL ) == 0 );
 
+#if !defined(__APPLE__)
+  // TODO: Must fix this.
   int winch_fd = signalfd( -1, &signal_mask, 0 );
   if ( winch_fd < 0 ) {
     perror( "signalfd" );
     return;
   }
+#endif
 
   /* get current window size */
   struct winsize window_size;
@@ -223,8 +234,11 @@ void emulate_terminal( int fd )
   pollfds[ 1 ].fd = fd;
   pollfds[ 1 ].events = POLLIN;
 
+#if !defined(__APPLE__)
+  // TODO: Must fix this.
   pollfds[ 2 ].fd = winch_fd;
   pollfds[ 2 ].events = POLLIN;
+#endif
 
   swrite( STDOUT_FILENO, Terminal::Emulator::open().c_str() );
 
@@ -279,9 +293,12 @@ void emulate_terminal( int fd )
       }
     } else if ( pollfds[ 2 ].revents & POLLIN ) {
       /* resize */
+#if !defined(__APPLE__)
+  // TODO: Must fix this.
       struct signalfd_siginfo info;
       assert( read( winch_fd, &info, sizeof( info ) ) == sizeof( info ) );
       assert( info.ssi_signo == SIGWINCH );
+#endif
 
       /* get new size */
       if ( ioctl( STDIN_FILENO, TIOCGWINSZ, &window_size ) < 0 ) {

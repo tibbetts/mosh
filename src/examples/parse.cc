@@ -16,7 +16,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <pty.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +30,12 @@
 #include <wctype.h>
 #include <iostream>
 #include <typeinfo>
+
+#if defined(__APPLE__)
+# include <util.h>
+#else
+# include <pty.h>
+#endif
 
 #include "parser.h"
 #include "swrite.h"

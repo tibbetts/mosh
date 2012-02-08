@@ -22,7 +22,6 @@
 #include <termios.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <pty.h>
 #include <stdlib.h>
 #include <poll.h>
 #include <sys/ioctl.h>
@@ -30,7 +29,14 @@
 #include <pwd.h>
 #include <typeinfo>
 #include <signal.h>
-#include <sys/signalfd.h>
+#if defined(__APPLE__)
+# include <util.h>
+# include <crt_externs.h>
+# define environ *_NSGetEnviron()
+#else
+# include <pty.h>
+# include <sys/signalfd.h>
+#endif
 
 #include "completeterminal.h"
 #include "swrite.h"
@@ -165,11 +171,14 @@ void serve( int host_fd, const char *desired_ip )
   /* don't let signals kill us */
   assert( sigprocmask( SIG_BLOCK, &signals_to_block, NULL ) == 0 );
 
+#if !defined(__APPLE__)
+  // TODO: Must fix this.
   int shutdown_signal_fd = signalfd( -1, &signal_mask, 0 );
   if ( shutdown_signal_fd < 0 ) {
     perror( "signalfd" );
     return;
   }
+#endif
 
   /* get initial window size */
   struct winsize window_size;
@@ -215,8 +224,11 @@ void serve( int host_fd, const char *desired_ip )
   pollfds[ 1 ].fd = host_fd;
   pollfds[ 1 ].events = POLLIN;
 
+#if !defined(__APPLE__)
+  // TODO: Must fix this.
   pollfds[ 2 ].fd = shutdown_signal_fd;
   pollfds[ 2 ].events = POLLIN;
+#endif
 
   uint64_t last_remote_num = network.get_remote_state_num();
 
@@ -292,6 +304,8 @@ void serve( int host_fd, const char *desired_ip )
 	}
       }
 
+#if !defined(__APPLE__)
+  // TODO: Must fix this.
       if ( pollfds[ 2 ].revents & POLLIN ) {
 	/* shutdown signal */
 	struct signalfd_siginfo the_siginfo;
@@ -309,6 +323,7 @@ void serve( int host_fd, const char *desired_ip )
 	  break;
 	}
       }
+#endif
       
       if ( (pollfds[ 0 ].revents)
 	   & (POLLERR | POLLHUP | POLLNVAL) ) {
