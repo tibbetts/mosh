@@ -19,6 +19,12 @@
 #include <string.h>
 #include <stdio.h>
 
+#if defined(__APPLE__)
+#include <libkern/OSByteOrder.h>
+#define htobe64 OSSwapHostToBigInt64
+#define be64toh OSSwapBigToHostInt64
+#endif
+
 #include "crypto.h"
 #include "base64.h"
 
