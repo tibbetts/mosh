@@ -103,12 +103,14 @@ void Connection::setup( void )
     throw NetworkException( "socket", errno );
   }
 
+#if !defined(__APPLE__)
   /* Disable path MTU discovery */
   char flag = IP_PMTUDISC_DONT;
   socklen_t optlen = sizeof( flag );
   if ( setsockopt( sock, IPPROTO_IP, IP_MTU_DISCOVER, &flag, optlen ) < 0 ) {
     throw NetworkException( "setsockopt", errno );
   }
+#endif
 }
 
 Connection::Connection( const char *desired_ip ) /* server */
@@ -372,6 +374,9 @@ void Connection::update_MTU( void )
     throw NetworkException( "connect", errno );
   }
 
+#if defined(__APPLE__)
+  MTU = SEND_MTU;
+#else
   int PMTU;
   socklen_t optlen = sizeof( PMTU );
   if ( getsockopt( path_MTU_socket.fd, IPPROTO_IP, IP_MTU, &PMTU, &optlen ) < 0 ) {
@@ -383,4 +388,5 @@ void Connection::update_MTU( void )
   }
 
   MTU = min( PMTU, int(SEND_MTU) ); /* need cast to compile without optimization! XXX */
+#endif
 }
