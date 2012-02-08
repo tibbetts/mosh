@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -295,14 +296,13 @@ int Connection::port( void ) const
 
 uint64_t Network::timestamp( void )
 {
-  struct timespec tp;
-
-  if ( clock_gettime( CLOCK_MONOTONIC, &tp ) < 0 ) {
-    throw NetworkException( "clock_gettime", errno );
+  struct timeval tv;
+  if ( gettimeofday(&tv, NULL) ) {
+    throw NetworkException( "gettimeofday", errno );
   }
 
-  uint64_t millis = tp.tv_nsec / 1000000;
-  millis += uint64_t( tp.tv_sec ) * 1000;
+  uint64_t millis = tv.tv_usec / 1000;
+  millis += uint64_t( tv.tv_sec ) * 1000;
 
   return millis;
 }
