@@ -16,7 +16,15 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <endian.h>
+#if defined(__APPLE__)
+# include <libkern/OSByteOrder.h>
+# define htobe64 OSSwapHostToBigInt64
+# define be64toh OSSwapBigToHostInt64
+# define htobe16 OSSwapHostToBigInt16
+# define be16toh OSSwapBigToHostInt16
+#else
+# include <endian.h>
+#endif
 #include <assert.h>
 
 #include "transportfragment.h"
